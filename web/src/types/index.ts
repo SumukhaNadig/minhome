@@ -16,8 +16,16 @@ export const SOT_FIELDS: SotFieldDef[] = [
   { key: 'notes', label: 'Notes', type: 'string' },
 ]
 
+export type Customer = {
+  _id: string
+  name: string
+  createdAt: string
+  updatedAt: string
+}
+
 export type Txn = {
   _id: string
+  customerId: string
   address: string
   status: 'active' | 'closed' | 'cancelled'
   flags?: Record<string, boolean>
@@ -51,6 +59,7 @@ export type TaskExec = {
 
 export type TaskDef = {
   _id: string
+  customerId: string
   name: string
   description: string
   watchedKeys: string[]

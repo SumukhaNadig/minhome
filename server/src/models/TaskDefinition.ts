@@ -25,6 +25,7 @@ const actionSchema = new Schema(
 
 const taskDefinitionSchema = new Schema(
   {
+    customerId: { type: Schema.Types.ObjectId, ref: 'Customer', required: true, index: true },
     name: { type: String, required: true, trim: true },
     description: { type: String, default: '' },
     watchedKeys: { type: [String], default: [] },

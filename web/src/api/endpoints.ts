@@ -1,14 +1,16 @@
 import { api } from './client'
 import type {
-  Txn, Sot, AuditEntry, TaskExec, TaskDef, EmailLogEntry, Note, Paginated,
+  Customer, Txn, Sot, AuditEntry, TaskExec, TaskDef, EmailLogEntry, Note, Paginated,
 } from '../types'
 
 export const endpoints = {
   me: () => api.get<{ user: { email: string; name: string } }>('/api/me').then(r => r.data),
 
-  listTxns: (params: { status?: string; limit?: number; offset?: number } = {}) =>
+  listCustomers: () => api.get<Customer[]>('/api/customers').then(r => r.data),
+
+  listTxns: (params: { customerId?: string; status?: string; limit?: number; offset?: number } = {}) =>
     api.get<Paginated<Txn>>('/api/transactions', { params }).then(r => r.data),
-  createTxn: (body: { address: string; status?: string }) =>
+  createTxn: (body: { customerId: string; address: string; status?: string }) =>
     api.post<Txn>('/api/transactions', body).then(r => r.data),
   getTxn: (id: string) =>
     api.get<{ transaction: Txn; sourceOfTruth: Sot | null }>(`/api/transactions/${id}`).then(r => r.data),

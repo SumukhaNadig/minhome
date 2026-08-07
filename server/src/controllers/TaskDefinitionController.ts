@@ -3,14 +3,17 @@ import { TaskDefinition } from '../models/TaskDefinition'
 import {
   createTaskDefinitionBody,
   updateTaskDefinitionBody,
+  listTaskDefinitionsQuery,
 } from '../validations/taskDefinition'
 import { objectIdParam } from '../validations/common'
 import { NotFoundError } from '../errors'
 
 export const TaskDefinitionController = {
-  async list(_req: Request, res: Response, next: NextFunction) {
+  async list(req: Request, res: Response, next: NextFunction) {
     try {
-      res.json(await TaskDefinition.find().sort({ name: 1 }))
+      const { customerId } = listTaskDefinitionsQuery.parse(req.query)
+      const q = customerId ? { customerId } : {}
+      res.json(await TaskDefinition.find(q).sort({ name: 1 }))
     } catch (e) { next(e) }
   },
 

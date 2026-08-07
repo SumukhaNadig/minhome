@@ -2,6 +2,7 @@ import { Schema, model, Types, InferSchemaType, HydratedDocument } from 'mongoos
 
 const transactionSchema = new Schema(
   {
+    customerId: { type: Schema.Types.ObjectId, ref: 'Customer', required: true, index: true },
     address: { type: String, required: true, trim: true },
     status: {
       type: String,

@@ -14,6 +14,8 @@ export function TaskDefinitionsList() {
   const nav = useNavigate()
   const qc = useQueryClient()
   const { data, isLoading } = useQuery({ queryKey: ['task-definitions'], queryFn: endpoints.listTaskDefs })
+  const customers = useQuery({ queryKey: ['customers'], queryFn: endpoints.listCustomers })
+  const customerName = (id: string) => customers.data?.find(c => c._id === id)?.name ?? '—'
 
   const toggle = useMutation({
     mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
@@ -46,6 +48,7 @@ export function TaskDefinitionsList() {
               <TableHead>
                 <TableRow>
                   <TableCell>Name</TableCell>
+                  <TableCell>Customer</TableCell>
                   <TableCell>Watched Keys</TableCell>
                   <TableCell align="right">Predicates</TableCell>
                   <TableCell align="right">Actions</TableCell>
@@ -63,6 +66,11 @@ export function TaskDefinitionsList() {
                           {def.description}
                         </Typography>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        {customerName(def.customerId)}
+                      </Typography>
                     </TableCell>
                     <TableCell>
                       <Stack direction="row" gap={0.5} flexWrap="wrap">

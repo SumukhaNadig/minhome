@@ -23,7 +23,7 @@ function formatPrice(n?: unknown) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 }
 
-const initialDraft = { address: '', buyerName: '', sellerName: '', status: 'active' as const }
+const initialDraft = { customerId: '', address: '', buyerName: '', sellerName: '', status: 'active' as const }
 
 export function TransactionsList() {
   const nav = useNavigate()
@@ -36,9 +36,12 @@ export function TransactionsList() {
     queryFn: () => endpoints.listTxns(),
   })
 
+  const customers = useQuery({ queryKey: ['customers'], queryFn: endpoints.listCustomers })
+  const customerName = (id: string) => customers.data?.find(c => c._id === id)?.name ?? '—'
+
   const createMut = useMutation({
     mutationFn: async () => {
-      const txn = await endpoints.createTxn({ address: draft.address, status: draft.status })
+      const txn = await endpoints.createTxn({ customerId: draft.customerId, address: draft.address, status: draft.status })
       const sotChanges = [
         { key: 'propertyAddress', value: draft.address },
         ...(draft.buyerName ? [{ key: 'buyerName', value: draft.buyerName }] : []),
@@ -81,6 +84,7 @@ export function TransactionsList() {
               <TableHead>
                 <TableRow>
                   <TableCell>Address</TableCell>
+                  <TableCell>Customer</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Flags</TableCell>
                   <TableCell>Last Updated</TableCell>
@@ -99,6 +103,11 @@ export function TransactionsList() {
                       <TableCell>
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
                           {txn.address}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {customerName(txn.customerId)}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -137,6 +146,17 @@ export function TransactionsList() {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
+              select
+              fullWidth
+              label="Customer"
+              value={draft.customerId}
+              onChange={e => setDraft(d => ({ ...d, customerId: e.target.value }))}
+            >
+              {(customers.data ?? []).map(c => (
+                <MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>
+              ))}
+            </TextField>
+            <TextField
               autoFocus
               fullWidth
               label="Address"
@@ -172,7 +192,7 @@ export function TransactionsList() {
           <Button onClick={() => setOpen(false)}>Cancel</Button>
           <Button
             variant="contained"
-            disabled={!draft.address.trim() || createMut.isPending}
+            disabled={!draft.customerId || !draft.address.trim() || createMut.isPending}
             onClick={() => createMut.mutate()}
           >
             Create

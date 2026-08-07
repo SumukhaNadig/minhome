@@ -3,10 +3,10 @@ import { TaskDefinition } from '../models/TaskDefinition'
 import { TaskExecution } from '../models/TaskExecution'
 import { EmailLog } from '../models/EmailLog'
 import { Transaction } from '../models/Transaction'
-import { makeTxn, makeSot } from './helpers'
+import { makeTxn, makeSot, makeCustomer } from './helpers'
 
-async function makeDef(partial: Partial<any>) {
-  return TaskDefinition.create({ name: 'T', enabled: true, watchedKeys: [], predicates: [], actions: [], ...partial })
+async function makeDef(customerId: any, partial: Partial<any>) {
+  return TaskDefinition.create({ customerId, name: 'T', enabled: true, watchedKeys: [], predicates: [], actions: [], ...partial })
 }
 
 describe('taskService.evaluate', () => {
@@ -20,8 +20,8 @@ describe('taskService.evaluate', () => {
   it('only loads tasks whose watchedKeys overlap changes', async () => {
     const txn = await makeTxn()
     await makeSot(txn._id, { purchasePrice: 1500000 })
-    await makeDef({ name: 'matches', watchedKeys: ['purchasePrice'], actions: [{ type: 'setFlag', config: { flagName: 'h', value: true } }] })
-    await makeDef({ name: 'no-match', watchedKeys: ['agentEmail'], actions: [{ type: 'setFlag', config: { flagName: 'x', value: true } }] })
+    await makeDef(txn.customerId, { name: 'matches', watchedKeys: ['purchasePrice'], actions: [{ type: 'setFlag', config: { flagName: 'h', value: true } }] })
+    await makeDef(txn.customerId, { name: 'no-match', watchedKeys: ['agentEmail'], actions: [{ type: 'setFlag', config: { flagName: 'x', value: true } }] })
 
     await taskService.evaluate(txn._id.toString(), [{ key: 'purchasePrice', oldValue: 0, newValue: 1500000 }])
 
@@ -30,10 +30,27 @@ describe('taskService.evaluate', () => {
     expect(updated?.flags?.get('x')).toBeUndefined()
   })
 
+  it("does not run another customer's task definitions", async () => {
+    const txn = await makeTxn()
+    await makeSot(txn._id, { purchasePrice: 1500000 })
+    const otherCustomer = await makeCustomer('Other Realty')
+    await makeDef(otherCustomer._id, {
+      name: 'other-customer-def',
+      watchedKeys: ['purchasePrice'],
+      actions: [{ type: 'setFlag', config: { flagName: 'leaked', value: true } }],
+    })
+
+    await taskService.evaluate(txn._id.toString(), [{ key: 'purchasePrice', oldValue: 0, newValue: 1500000 }])
+
+    const after = await Transaction.findById(txn._id)
+    expect(after?.flags?.get('leaked')).toBeUndefined()
+    expect(await TaskExecution.countDocuments()).toBe(0)
+  })
+
   it('evaluates predicates against current SOT and only fires when all pass', async () => {
     const txn = await makeTxn()
     await makeSot(txn._id, { purchasePrice: 500000 })
-    await makeDef({
+    await makeDef(txn.customerId, {
       name: 'high-value',
       watchedKeys: ['purchasePrice'],
       predicates: [{ key: 'purchasePrice', op: 'gte', value: 1000000 }],
@@ -48,7 +65,7 @@ describe('taskService.evaluate', () => {
   it('persists a TaskExecution with triggeringChanges and actionResults', async () => {
     const txn = await makeTxn()
     await makeSot(txn._id, { purchasePrice: 1500000, agentEmail: 'a@x.com' })
-    const def = await makeDef({
+    const def = await makeDef(txn.customerId, {
       name: 'big',
       watchedKeys: ['purchasePrice'],
       predicates: [{ key: 'purchasePrice', op: 'gt', value: 1000000 }, { key: 'agentEmail', op: 'exists' }],
@@ -67,13 +84,13 @@ describe('taskService.evaluate', () => {
   it('accepts multi-change input (the batch shape) without changing behavior', async () => {
     const txn = await makeTxn()
     await makeSot(txn._id, { purchasePrice: 2000000, financingType: 'cash' })
-    await makeDef({
+    await makeDef(txn.customerId, {
       name: 'cash-flag',
       watchedKeys: ['financingType'],
       predicates: [{ key: 'financingType', op: 'eq', value: 'cash' }],
       actions: [{ type: 'setFlag', config: { flagName: 'cashDeal', value: true } }],
     })
-    await makeDef({
+    await makeDef(txn.customerId, {
       name: 'big-flag',
       watchedKeys: ['purchasePrice'],
       predicates: [{ key: 'purchasePrice', op: 'gte', value: 1000000 }],
