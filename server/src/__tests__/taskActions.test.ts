@@ -1,4 +1,5 @@
 import { dispatch, ActionContext } from '../services/taskActions'
+import { Customer } from '../models/Customer'
 import { Transaction } from '../models/Transaction'
 import { SourceOfTruth } from '../models/SourceOfTruth'
 import { TaskDefinition } from '../models/TaskDefinition'
@@ -6,9 +7,10 @@ import { EmailLog } from '../models/EmailLog'
 import { Note } from '../models/Note'
 
 async function buildCtx(fields: Record<string, unknown> = {}): Promise<ActionContext> {
-  const transaction = await Transaction.create({ address: '1 Main' })
+  const customer = await Customer.create({ name: 'Test Realty' })
+  const transaction = await Transaction.create({ customerId: customer._id, address: '1 Main' })
   const sot = await SourceOfTruth.create({ transactionId: transaction._id, fields })
-  const taskDefinition = await TaskDefinition.create({ name: 'T', watchedKeys: [], predicates: [], actions: [] })
+  const taskDefinition = await TaskDefinition.create({ customerId: customer._id, name: 'T', watchedKeys: [], predicates: [], actions: [] })
   return { transaction, sot, taskDefinition, triggeringChanges: [] }
 }
 

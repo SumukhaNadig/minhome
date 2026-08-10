@@ -5,6 +5,11 @@ source-of-truth around them. Coordinators use MinHome to manage
 transactions through their lifecycle: from initial address capture
 through closing, with structured fields edited as facts are confirmed.
 
+MinHome serves multiple brokerage customers. Every transaction belongs
+to a customer, and each customer has its own set of task definitions —
+the rules that fire when source-of-truth fields change. Seeding creates
+three customers with transactions and rules to poke at.
+
 ## Stack
 
 - BE: Express, TypeScript, Mongoose

@@ -40,6 +40,7 @@ export const taskService = {
 
     const changedKeys = changes.map(c => c.key)
     const candidates = await TaskDefinition.find({
+      customerId: transaction.customerId,
       enabled: true,
       watchedKeys: { $in: changedKeys },
     })

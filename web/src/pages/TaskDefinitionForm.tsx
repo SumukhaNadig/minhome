@@ -20,6 +20,7 @@ type Predicate = { key: string; op: string; value: any }
 type Action = { type: 'sendEmail'|'setFlag'|'createNote'; config: any }
 
 const empty = {
+  customerId: '',
   name: '',
   description: '',
   enabled: true,
@@ -41,9 +42,12 @@ export function TaskDefinitionForm() {
     enabled: !isNew,
   })
 
+  const customers = useQuery({ queryKey: ['customers'], queryFn: endpoints.listCustomers })
+
   useEffect(() => {
     if (existing.data) {
       setForm({
+        customerId: existing.data.customerId,
         name: existing.data.name,
         description: existing.data.description ?? '',
         enabled: existing.data.enabled,
@@ -92,6 +96,12 @@ export function TaskDefinitionForm() {
         />
         <Paper variant="outlined" sx={{ p: 3 }}>
           <Stack spacing={2}>
+            <TextField select label="Customer" value={form.customerId}
+              onChange={e => setForm({ ...form, customerId: e.target.value })}>
+              {(customers.data ?? []).map(c => (
+                <MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>
+              ))}
+            </TextField>
             <TextField label="Name" value={form.name}
               onChange={e => setForm({ ...form, name: e.target.value })} />
             <TextField label="Description" multiline minRows={2}
@@ -190,7 +200,7 @@ export function TaskDefinitionForm() {
 
             <Divider />
             <Stack direction="row" spacing={2}>
-              <Button variant="contained" onClick={() => save.mutate()} disabled={!form.name || save.isPending}>
+              <Button variant="contained" onClick={() => save.mutate()} disabled={!form.name || !form.customerId || save.isPending}>
                 Save
               </Button>
               <Button onClick={() => nav('/task-definitions')}>Cancel</Button>

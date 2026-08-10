@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { PREDICATE_OPS, ACTION_TYPES } from '../models/TaskDefinition'
+import { objectId } from './common'
 
 const predicate = z.object({
   key: z.string().min(1),
@@ -13,6 +14,7 @@ const action = z.object({
 })
 
 export const createTaskDefinitionBody = z.object({
+  customerId: objectId,
   name: z.string().min(1).max(200),
   description: z.string().max(2000).default(''),
   watchedKeys: z.array(z.string()).default([]),
@@ -22,3 +24,7 @@ export const createTaskDefinitionBody = z.object({
 })
 
 export const updateTaskDefinitionBody = createTaskDefinitionBody.partial()
+
+export const listTaskDefinitionsQuery = z.object({
+  customerId: objectId.optional(),
+})

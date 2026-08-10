@@ -3,14 +3,19 @@ import { SourceOfTruth } from '../models/SourceOfTruth'
 import { NotFoundError } from '../errors'
 
 export const transactionService = {
-  async create(input: { address: string; status?: 'active' | 'closed' | 'cancelled' }) {
+  async create(input: {
+    customerId: string
+    address: string
+    status?: 'active' | 'closed' | 'cancelled'
+  }) {
     const txn = await Transaction.create(input)
     await SourceOfTruth.create({ transactionId: txn._id, fields: {} })
     return txn
   },
 
-  async list(filter: { status?: string; limit?: number; offset?: number } = {}) {
+  async list(filter: { customerId?: string; status?: string; limit?: number; offset?: number } = {}) {
     const q: any = {}
+    if (filter.customerId) q.customerId = filter.customerId
     if (filter.status) q.status = filter.status
     const limit = Math.min(Math.max(filter.limit ?? 50, 1), 200)
     const offset = Math.max(filter.offset ?? 0, 0)

@@ -1,5 +1,6 @@
 import request from 'supertest'
 import { buildApp } from '../app'
+import { Customer } from '../models/Customer'
 import { Transaction } from '../models/Transaction'
 import { SourceOfTruth } from '../models/SourceOfTruth'
 import { TaskDefinition } from '../models/TaskDefinition'
@@ -11,10 +12,12 @@ const app = buildApp()
 
 describe('PATCH /api/transactions/:id/sot', () => {
   it('applies changes, fires task evaluation, and writes audit log', async () => {
-    const txn = await Transaction.create({ address: '1 Main' })
+    const customer = await Customer.create({ name: 'Test Realty' })
+    const txn = await Transaction.create({ customerId: customer._id, address: '1 Main' })
     await SourceOfTruth.create({ transactionId: txn._id, fields: {} })
 
     await TaskDefinition.create({
+      customerId: customer._id,
       name: 'high-value',
       enabled: true,
       watchedKeys: ['purchasePrice'],
@@ -36,7 +39,8 @@ describe('PATCH /api/transactions/:id/sot', () => {
   })
 
   it('returns 400 on unknown SOT key', async () => {
-    const txn = await Transaction.create({ address: '2 Main' })
+    const customer = await Customer.create({ name: 'Test Realty' })
+    const txn = await Transaction.create({ customerId: customer._id, address: '2 Main' })
     await SourceOfTruth.create({ transactionId: txn._id, fields: {} })
 
     const res = await request(app)

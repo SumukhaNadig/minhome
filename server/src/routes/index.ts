@@ -7,11 +7,14 @@ import { AuditLogController } from '../controllers/AuditLogController'
 import { TaskExecutionController } from '../controllers/TaskExecutionController'
 import { EmailLogController } from '../controllers/EmailLogController'
 import { NoteController } from '../controllers/NoteController'
+import { CustomerController } from '../controllers/CustomerController'
 
 export function buildApiRouter(): Router {
   const r = Router()
 
   r.get('/me', MeController.get)
+
+  r.get('/customers', CustomerController.list)
 
   r.get('/transactions', TransactionController.list)
   r.post('/transactions', TransactionController.create)

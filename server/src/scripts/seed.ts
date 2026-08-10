@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import { connectMongo, disconnectMongo } from '../db'
+import { Customer } from '../models/Customer'
 import { Transaction } from '../models/Transaction'
 import { SourceOfTruth } from '../models/SourceOfTruth'
 import { TaskDefinition } from '../models/TaskDefinition'
@@ -16,6 +17,7 @@ const daysFromNow = (d: number) => {
 
 async function clear() {
   await Promise.all([
+    Customer.deleteMany({}),
     Transaction.deleteMany({}),
     SourceOfTruth.deleteMany({}),
     TaskDefinition.deleteMany({}),
@@ -26,27 +28,41 @@ async function clear() {
   ])
 }
 
-async function seedTransactions() {
+type Customers = { redline: any; pacificCrest: any; harborMain: any }
+
+async function seedCustomers(): Promise<Customers> {
+  const [redline, pacificCrest, harborMain] = await Customer.create([
+    { name: 'Redline Realty' },
+    { name: 'Pacific Crest Homes' },
+    { name: 'Harbor & Main' },
+  ])
+  return { redline, pacificCrest, harborMain }
+}
+
+async function seedTransactions(customers: Customers) {
+  const { redline, pacificCrest, harborMain } = customers
   const definitions = [
-    { address: '142 Cherry Lane, Austin TX', status: 'active', fields: { propertyAddress: '142 Cherry Lane, Austin TX', purchasePrice: 875000, closingDate: daysFromNow(45), buyerName: 'Patel Family', sellerName: 'Lopez Family', agentName: 'Marisol Vega', agentEmail: 'marisol.vega@homefinder.test', inspectionStatus: 'scheduled', financingType: 'conventional', earnestMoneyAmount: 25000, titleCompany: 'Lone Star Title' } },
-    { address: '88 Beachview Dr, Santa Cruz CA', status: 'active', fields: { propertyAddress: '88 Beachview Dr, Santa Cruz CA', purchasePrice: 2400000, closingDate: daysFromNow(28), buyerName: 'A. Chen', sellerName: 'P. Murphy', agentName: 'Devon Park', agentEmail: 'devon.park@coastalrealty.test', inspectionStatus: 'pending', financingType: 'cash', earnestMoneyAmount: 200000, titleCompany: 'Coastal Title Co' } },
-    { address: '512 Maple Ave, Denver CO', status: 'active', fields: { propertyAddress: '512 Maple Ave, Denver CO', purchasePrice: 645000, closingDate: daysFromNow(60), buyerName: 'J. Reyes', sellerName: 'M. Klein', agentName: 'Bailey Tran', agentEmail: 'bailey.tran@rockyrealty.test', inspectionStatus: 'complete', financingType: 'fha', earnestMoneyAmount: 15000, titleCompany: 'Mile High Title' } },
-    { address: '7 Riverbend Ct, Portland OR', status: 'active', fields: { propertyAddress: '7 Riverbend Ct, Portland OR', purchasePrice: 1100000, closingDate: daysFromNow(75), buyerName: 'Karim Bros', sellerName: 'A. Schultz', agentName: 'Sloane Park', agentEmail: 'sloane.park@bridgetown.test', inspectionStatus: 'scheduled', financingType: 'conventional', earnestMoneyAmount: 40000, titleCompany: 'Stumptown Title' } },
-    { address: '900 Sunset Blvd, Los Angeles CA', status: 'closed', fields: { propertyAddress: '900 Sunset Blvd, Los Angeles CA', purchasePrice: 3200000, closingDate: daysFromNow(-21), buyerName: 'Hollywood LLC', sellerName: 'Sunset Trust', agentName: 'Rae Holloway', agentEmail: 'rae@hwoodrealty.test', inspectionStatus: 'complete', financingType: 'cash', earnestMoneyAmount: 300000, titleCompany: 'Pacific Title' } },
-    { address: '23 Birch St, Burlington VT', status: 'closed', fields: { propertyAddress: '23 Birch St, Burlington VT', purchasePrice: 410000, closingDate: daysFromNow(-90), buyerName: 'M. Caron', sellerName: 'D. Berlin', agentName: 'Alex Lake', agentEmail: 'alex@greenmtn.test', inspectionStatus: 'complete', financingType: 'va', earnestMoneyAmount: 8000, titleCompany: 'Green Mountain Title' } },
-    { address: '301 Pine Trail, Asheville NC', status: 'active', fields: { propertyAddress: '301 Pine Trail, Asheville NC', purchasePrice: 580000, closingDate: daysFromNow(7), buyerName: 'F. Yamato', sellerName: 'L. Ross', agentName: 'Camille Boyd', agentEmail: 'camille.boyd@blueridge.test', inspectionStatus: 'pending', financingType: 'conventional', earnestMoneyAmount: 18000 } },
-    { address: '14 Echo Way, Boise ID', status: 'active', fields: {} },
+    { customer: redline, address: '142 Cherry Lane, Austin TX', status: 'active', fields: { propertyAddress: '142 Cherry Lane, Austin TX', purchasePrice: 875000, closingDate: daysFromNow(45), buyerName: 'Patel Family', sellerName: 'Lopez Family', agentName: 'Marisol Vega', agentEmail: 'marisol.vega@homefinder.test', inspectionStatus: 'scheduled', financingType: 'conventional', earnestMoneyAmount: 25000, titleCompany: 'Lone Star Title' } },
+    { customer: redline, address: '88 Beachview Dr, Santa Cruz CA', status: 'active', fields: { propertyAddress: '88 Beachview Dr, Santa Cruz CA', purchasePrice: 2400000, closingDate: daysFromNow(28), buyerName: 'A. Chen', sellerName: 'P. Murphy', agentName: 'Devon Park', agentEmail: 'devon.park@coastalrealty.test', inspectionStatus: 'pending', financingType: 'cash', earnestMoneyAmount: 200000, titleCompany: 'Coastal Title Co' } },
+    { customer: pacificCrest, address: '512 Maple Ave, Denver CO', status: 'active', fields: { propertyAddress: '512 Maple Ave, Denver CO', purchasePrice: 645000, closingDate: daysFromNow(60), buyerName: 'J. Reyes', sellerName: 'M. Klein', agentName: 'Bailey Tran', agentEmail: 'bailey.tran@rockyrealty.test', inspectionStatus: 'complete', financingType: 'fha', earnestMoneyAmount: 15000, titleCompany: 'Mile High Title' } },
+    { customer: pacificCrest, address: '7 Riverbend Ct, Portland OR', status: 'active', fields: { propertyAddress: '7 Riverbend Ct, Portland OR', purchasePrice: 1100000, closingDate: daysFromNow(75), buyerName: 'Karim Bros', sellerName: 'A. Schultz', agentName: 'Sloane Park', agentEmail: 'sloane.park@bridgetown.test', inspectionStatus: 'scheduled', financingType: 'conventional', earnestMoneyAmount: 40000, titleCompany: 'Stumptown Title' } },
+    { customer: redline, address: '900 Sunset Blvd, Los Angeles CA', status: 'closed', fields: { propertyAddress: '900 Sunset Blvd, Los Angeles CA', purchasePrice: 3200000, closingDate: daysFromNow(-21), buyerName: 'Hollywood LLC', sellerName: 'Sunset Trust', agentName: 'Rae Holloway', agentEmail: 'rae@hwoodrealty.test', inspectionStatus: 'complete', financingType: 'cash', earnestMoneyAmount: 300000, titleCompany: 'Pacific Title' } },
+    { customer: pacificCrest, address: '23 Birch St, Burlington VT', status: 'closed', fields: { propertyAddress: '23 Birch St, Burlington VT', purchasePrice: 410000, closingDate: daysFromNow(-90), buyerName: 'M. Caron', sellerName: 'D. Berlin', agentName: 'Alex Lake', agentEmail: 'alex@greenmtn.test', inspectionStatus: 'complete', financingType: 'va', earnestMoneyAmount: 8000, titleCompany: 'Green Mountain Title' } },
+    { customer: harborMain, address: '301 Pine Trail, Asheville NC', status: 'active', fields: { propertyAddress: '301 Pine Trail, Asheville NC', purchasePrice: 580000, closingDate: daysFromNow(7), buyerName: 'F. Yamato', sellerName: 'L. Ross', agentName: 'Camille Boyd', agentEmail: 'camille.boyd@blueridge.test', inspectionStatus: 'pending', financingType: 'conventional', earnestMoneyAmount: 18000 } },
+    { customer: harborMain, address: '14 Echo Way, Boise ID', status: 'active', fields: {} },
   ]
 
   for (const def of definitions) {
-    const txn = await Transaction.create({ address: def.address, status: def.status as any })
+    const txn = await Transaction.create({ customerId: def.customer._id, address: def.address, status: def.status as any })
     await SourceOfTruth.create({ transactionId: txn._id, fields: def.fields })
   }
 }
 
-async function seedTaskDefinitions() {
+async function seedTaskDefinitions(customers: Customers) {
+  const { redline, pacificCrest, harborMain } = customers
   await TaskDefinition.create([
     {
+      customerId: redline._id,
       name: 'High-value flag',
       description: 'Flag transactions over $1M for review.',
       watchedKeys: ['purchasePrice'],
@@ -55,6 +71,7 @@ async function seedTaskDefinitions() {
       enabled: true,
     },
     {
+      customerId: redline._id,
       name: 'High-value email',
       description: 'Notify the agent on a high-value transaction.',
       watchedKeys: ['purchasePrice', 'agentEmail'],
@@ -75,6 +92,19 @@ async function seedTaskDefinitions() {
       enabled: true,
     },
     {
+      // Pacific Crest wanted the same high-value alert as Redline, but at their own
+      // threshold — so it got copied and tweaked. This is how per-customer rules
+      // are managed today.
+      customerId: pacificCrest._id,
+      name: 'High-value flag',
+      description: 'Flag transactions over $500k for review.',
+      watchedKeys: ['purchasePrice'],
+      predicates: [{ key: 'purchasePrice', op: 'gte', value: 500000 }],
+      actions: [{ type: 'setFlag', config: { flagName: 'highValue', value: true } }],
+      enabled: true,
+    },
+    {
+      customerId: pacificCrest._id,
       name: 'Inspection reminder',
       description: 'Add a note when inspection is incomplete and closing is set.',
       watchedKeys: ['inspectionStatus', 'closingDate'],
@@ -91,6 +121,7 @@ async function seedTaskDefinitions() {
       enabled: true,
     },
     {
+      customerId: redline._id,
       name: 'Cash deal flag',
       description: 'Flag cash deals.',
       watchedKeys: ['financingType'],
@@ -99,6 +130,7 @@ async function seedTaskDefinitions() {
       enabled: true,
     },
     {
+      customerId: harborMain._id,
       name: 'Title company missing',
       description: 'Create a note when title company is missing close to closing.',
       watchedKeys: ['titleCompany', 'closingDate'],
@@ -118,11 +150,14 @@ async function main() {
   console.log('Clearing collections...')
   await clear()
   // eslint-disable-next-line no-console
+  console.log('Seeding customers...')
+  const customers = await seedCustomers()
+  // eslint-disable-next-line no-console
   console.log('Seeding transactions...')
-  await seedTransactions()
+  await seedTransactions(customers)
   // eslint-disable-next-line no-console
   console.log('Seeding task definitions...')
-  await seedTaskDefinitions()
+  await seedTaskDefinitions(customers)
   // eslint-disable-next-line no-console
   console.log('Done.')
   await disconnectMongo()
